@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "Subscription Page";
+}
+<h1>@ViewData["Title"]</h1>
+
+<p>List of all Subscriptions.</p>
+
+<div class="pricingdiv">
+    @{
+        var listSubs = ViewData["lsubs"] as List<SubsSumaryModel>;
+        foreach (SubsSumaryModel subs in listSubs)
+        {
+            <ul class="theplan">
+                <li class="title">
+                    <b><a href="/Home/Subs?subs=development">@subs.SubsName</a></b>
+                    <br />@subs.SubsTime
+                </li>
+                <li>TOTAL: @subs.SubsCount</li>
+            </ul>
+        }
+    }
+</div>
