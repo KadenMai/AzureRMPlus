@@ -124,8 +124,8 @@ function GetAccessLog{
         $firstTime = (Get-Date -Year 0001 -Month 1 -Day 1)
     }
 
-    $firstAccess =  $firstTime.ToString("g");
-    $lastAccess = $lastTime.ToString("g");
+    $firstAccess =  $firstTime.ToString("u").split(" ")[0];
+    $lastAccess = $lastTime.ToString("u").split(" ")[0];
     return @{ firstCaller= $firstCaller; 
               firstCallerName = $firstCallerName;
               lastCaller=$lastCaller; 
@@ -293,4 +293,4 @@ $path = "C:\ezpath\data"
 
 GetResourceInfo_main -path $path -subscriptionName "Sandbox"
 GetResourceInfo_main -path $path -subscriptionName "Hub"
-#GetResourceInfo_main -path $path -subscriptionName "Development"
+GetResourceInfo_main -path $path -subscriptionName "Development"

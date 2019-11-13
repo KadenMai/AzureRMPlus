@@ -53,13 +53,15 @@ function getParameterByName(name, url) {
   return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
 
-$(document).ready(function() {
+$(document).ready(function () {
     var Subs = getParameterByName("subs");
     var SubsName = getParameterByName("name");
+    'use strict';
 
-  var table = $("#example").DataTable({
-    lengthMenu: [[100, -1], [100, "All"]],
-      ajax: "/API/SubsDetails?subs=" + Subs,
+    var table = $("#example").DataTable({
+        AutoWidth: false,
+        lengthMenu: [[100, -1], [100, "All"]],
+        ajax: "/API/SubsDetails?subs=" + Subs,
     columns: [
       {
         className: "details-control",
@@ -70,7 +72,15 @@ $(document).ready(function() {
       { data: "ResourceName" },
       { data: "ResourceType" },
       //   { data: "ResourceGroupName" },
-      { data: "FirstTime" },
+        {
+            data: "FirstTime",
+            //type:  "date-de"
+            //render: function (data, type, row) {
+            //    var split = data.split(' ');
+            //    return 
+            //         split[0]
+            //},
+        },
       { data: "FirstCallerName" },
       { data: "LastTime" },
       { data: "LastCallerName" },
@@ -100,7 +110,7 @@ $(document).ready(function() {
     },
     {
       column_number: 3,
-        filter_type: "range_date"
+        filter_type: "none"
     },
     {
       column_number: 4,
@@ -108,7 +118,7 @@ $(document).ready(function() {
     },
     {
       column_number: 5,
-        filter_type: "range_date"
+        filter_type: "none"
     },
     {
       column_number: 6
