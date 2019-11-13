@@ -19,15 +19,24 @@ function format(d) {
     "<td>" +
     d.ResourceGroupName +
     "</td>" +
+    "</tr>" +
     "<tr>" +
     "<td>Metric</td>" +
     "<td>" +
     d.Metric +
     "</td>" +
+    "</tr>" +
     "<tr>" +
     "<td>ExtraInfo</td>" +
     "<td>" +
     d.ExtraInfo +
+    "</td>" +
+    "</tr>" +
+
+    "<tr>" +
+    "<td>List Logs</td>" +
+    "<td>" +    
+    d.ListLogs.join("<br />") +
     "</td>" +
     "</tr>"
   );
@@ -45,7 +54,8 @@ function getParameterByName(name, url) {
 }
 
 $(document).ready(function() {
-  var Subs = getParameterByName("subs");
+    var Subs = getParameterByName("subs");
+    var SubsName = getParameterByName("name");
 
   var table = $("#example").DataTable({
     lengthMenu: [[100, -1], [100, "All"]],
@@ -61,18 +71,18 @@ $(document).ready(function() {
       { data: "ResourceType" },
       //   { data: "ResourceGroupName" },
       { data: "FirstTime" },
-      { data: "FirstCaller" },
+      { data: "FirstCallerName" },
       { data: "LastTime" },
-      { data: "LastCaller" },
+      { data: "LastCallerName" },
       // { data: "ExtraInfo" },
       // { data: "Metric" },
       { data: "Location" }
     ],
-    order: [[3, "desc"]],
+    order: [[5, "desc"]],
     dom: '<"toolbar">frtip',
 
     fnInitComplete: function() {
-      $("div.toolbar").html("<p class='subs'>Name: " + Subs + "</p>");
+        $("div.toolbar").html("<p class='subs'>Name: " + SubsName + "</p>");
     }
   });
 
@@ -90,7 +100,7 @@ $(document).ready(function() {
     },
     {
       column_number: 3,
-      filter_type: "range_date"
+        filter_type: "range_date"
     },
     {
       column_number: 4,
@@ -98,7 +108,7 @@ $(document).ready(function() {
     },
     {
       column_number: 5,
-      filter_type: "range_date"
+        filter_type: "range_date"
     },
     {
       column_number: 6

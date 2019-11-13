@@ -1,4 +1,5 @@
-﻿function GetMaxMetricResource ($rs, $starttime)
+﻿
+function GetMaxMetricResource ($rs, $starttime)
 {  
     try{
         # Microsoft.Sql/servers/databases
@@ -66,16 +67,20 @@ function GetExtraInfo{
 function GetAccessLog{
     param ($rs)
 
-    $rsLogs = Get-AzLog -StartTime (Get-Date).AddDays(-90) -ResourceId $rs.ResourceId
+    $rsLogs = Get-AzLog -StartTime (Get-Date).AddDays(-89) -ResourceId $rs.ResourceId
+    echo "Total Log: "$rsLogs.Count
        
     $firstCaller = ""
     $lastCaller = ""
-    $firstTime = (Get-Date).AddDays(1);
-    $lastTime = (Get-Date).AddDays(-90);
+    $firstCallerName = ""
+    $lastCallerName = ""
+    $firstTime = (Get-Date -Year 4000 -Month 1 -Day 1)
+    $lastTime = (Get-Date -Year 0001 -Month 1 -Day 1)
+    $listLog = New-Object System.Collections.ArrayList
 
     if(!$rsLogs){   # The resource doesn't have any log in past 90 days
-        $firstTime = (Get-Date -Year 2000 -Month 1 -Day 1)
-        $lastTime = (Get-Date -Year 2000 -Month 1 -Day 1)
+        $firstTime = (Get-Date -Year 0001 -Month 1 -Day 1)
+        $lastTime = (Get-Date -Year 0001 -Month 1 -Day 1)
     }
     else{   # The resource has log in past 90 days
         foreach($log in $rsLogs)
@@ -85,16 +90,17 @@ function GetAccessLog{
                 $caller = $log.Caller.Replace("@hrblock.com","")   # Get the caller
             }
             else
-            {
-           
+            {           
                 continue
             }
+
             # Get the boundary time
             # Update the first_Time
             if($firstTime -gt (get-date($log.SubmissionTimestamp)))
             {
                 $firstTime = (get-date($log.SubmissionTimestamp))
                 $firstCaller = $caller;
+                $firstCallerName = $log.Claims.Content["name"];
             }
 
             # Update the last_Time
@@ -102,13 +108,31 @@ function GetAccessLog{
             {
                 $lastTime = (get-date($log.SubmissionTimestamp))
                 $lastCaller = $caller;
+                $lastCallerName = $log.Claims.Content["name"];
             }
+
+            $strLog = (get-date($log.SubmissionTimestamp)).ToString("u") + " | " `
+                        + $log.Claims.Content["name"] + " | " `
+                        + $log.OperationName.LocalizedValue 
+            $listLog.Add($strLog)
+
         }
     }
+    
+    if($firstTime.Year -eq 4000)
+    {
+        $firstTime = (Get-Date -Year 0001 -Month 1 -Day 1)
+    }
 
-    $firstAccess =  $firstTime.ToString("yyyy-MM-dd");
-    $lastAccess = $lastTime.ToString("yyyy-MM-dd");
-    return @{ firstCaller= $firstCaller; lastCaller=$lastCaller; firstAccess = $firstAccess; lastAccess = $lastAccess }
+    $firstAccess =  $firstTime.ToString("g");
+    $lastAccess = $lastTime.ToString("g");
+    return @{ firstCaller= $firstCaller; 
+              firstCallerName = $firstCallerName;
+              lastCaller=$lastCaller; 
+              lastCallerName = $lastCallerName;
+              firstAccess = $firstAccess; 
+              lastAccess = $lastAccess;
+              listLog = $listLog }
 
 }
 
@@ -130,13 +154,14 @@ function GetResourceInfo_main{
     param([string]$subscriptionName,
           [string]$path)
 
-    Select-AzSubscription $subscriptionName
+    echo "Subscription: $subscriptionName"
+    $subs = Select-AzSubscription $subscriptionName
 
     $startTime = (Get-Date)
 
     # Get list of Resource
     $listResource = Get-AzResource -ExpandProperties
-    echo $listResource.Count # show the total rsource
+    echo "Total resources: " $listResource.Count # show the total rsource
     # Create Resource Infor
     $rsInfor = @{}
 
@@ -150,52 +175,26 @@ function GetResourceInfo_main{
             continue
         }
 
+        Write-Host "Working on: " $rs.ResourceId
+
         $countResource += 1
 
-        $rsLogs = Get-AzLog -StartTime (Get-Date).AddDays(-90) -ResourceId $rs.ResourceId
-       
-        $firstCaller = ""
-        $lastCaller = ""
-        $firstTime = (Get-Date).AddDays(1);
-        $lastTime = (Get-Date).AddDays(-90);
+        # $rsLogs = Get-AzLog -StartTime (Get-Date).AddDays(-90) -ResourceId $rs.ResourceId
+        # echo "Total Log in fuction: "$rsLogs.Count
 
-        if(!$rsLogs){   # The resource doesn't have any log in past 90 days
-            $firstTime = (Get-Date -Year 1 -Month 1 -Day 1)
-            $lastTime = (Get-Date -Year 1 -Month 1 -Day 1)
-        }
-        else{   # The resource has log in past 90 days
-            foreach($log in $rsLogs)
-            {
-                if($log.Caller.Contains("@hrblock.com")){
-                    $caller = $log.Caller.Replace("@hrblock.com","")   # Get the caller
-                }
-                else
-                {
-                    continue
-                }
+        ###################### Get list of Logs #############################
+        $listActiveLog = GetAccessLog $rs
+        $formatListLog = $listActiveLog.listLog
 
-                # Get the boundary time
-                # Update the first_Time
-                if($firstTime -gt [datetime]$log.SubmissionTimestamp)
-                {
-                    $firstTime = ($log.SubmissionTimestamp)
-                    if(![String]::IsNullOrEmpty($log.Caller)){
-                        $firstCaller = $log.Caller.Replace("@hrblock.com","")   # Get the caller
-                    }
-                }
-
-                # Update the last_Time
-                if($lastTime -lt [datetime]$log.SubmissionTimestamp)
-                {
-                    $lastTime = $log.SubmissionTimestamp
-                    if(![String]::IsNullOrEmpty($log.Caller)){
-                        $lastCaller = $log.Caller.Replace("@hrblock.com","")   # Get the caller
-                    }
-                }
-            }
+        if($listActiveLog.listLog.Count -eq 0)
+        {
+            $formatListLog = @(" ")
         }
 
-        $propertisejson = $rs.Properties | ConvertTo-Json -Depth 10
+        echo $listActiveLog.firstAccess
+        echo $listActiveLog.firstCaller
+
+        # $propertisejson = $rs.Properties | ConvertTo-Json -Depth 10
    
         ###################### Create and get Extra Infor #############################
    
@@ -214,38 +213,56 @@ function GetResourceInfo_main{
         $rsInfor.Add($rs.ResourceId, @{
                                        "ResourceId" = $rs.ResourceId;
                                        "ResourceName" = $rs.Name;
-                                       "ResourceType" = $rs.ResourceType;
+                                       "ResourceType" = $rs.ResourceType.Replace("Microsoft.","MS.");
                                        "ResourceGroupName" = $rs.ResourceGroupName;
-                                       "Location" = $rs.Location;
-                                       "FirstTime" = $firstTime;
-                                       "FirstCaller" = $firstCaller;
-                                       "LastTime" = $lastTime;
-                                       "LastCaller" = $lastCaller;
+                                       "Location" = $rs.Location.ToUpper();
+                                       "FirstTime" = $listActiveLog.firstAccess;
+                                       "FirstCaller" = $listActiveLog.firstCaller;
+                                       "FirstCallerName" = $listActiveLog.firstCallerName;
+                                       "LastTime" = $listActiveLog.lastAccess;
+                                       "LastCaller" = $listActiveLog.lastCaller;
+                                       "LastCallerName" = $listActiveLog.lastCallerName;
                                        "ExtraInfo" = $ExtraInfo;
                                        "Metric" = $Metric;
-                                       "Propertises" = $Propertises
+                                       "Propertises" = $Propertises;
+                                       "ListLogs" = $formatListLog
                                        })
     }
 
-    $rsInfor | Export-Clixml  $path.TrimEnd("\") + "\ResourceInfo_" + $subscriptionName.Replace(" ","").ToLower() +  ".xml"
+    #$rsInfor | Export-Clixml  $path.TrimEnd("\") + "\ResourceInfo_" + $subscriptionName.Replace(" ","").ToLower() +  ".xml"
 
     $prepare = @{"data" = $rsInfor.Values}
 
-    $outputPath = $path.TrimEnd("\") + "\ResourceInfo_" + $subscriptionName.Replace(" ","").ToLower() +  ".json"
+    $outputFile = "ResourceInfo_" + $subs.Subscription.Id +  ".json"
+
+    $outputPath = $path.TrimEnd("\") + "\" + $outputFile
 
     $prepare | ConvertTo-Json -Depth 10 | Out-File $outputPath
 
 
 
-    $info = "$subscriptionName`n$startTime`n" + $countResource
+    $info = "$subscriptionName`n$startTime`n$countResource`n" + $subs.Subscription.Id
 
-    $info_file = $path.TrimEnd("\") + "\ResourceInfo_" + $subscriptionName.Replace(" ","").ToLower() +  ".info"
+    $info_file = "ResourceInfo_" + $subs.Subscription.Id +  ".info"
 
-    $info | Out-File $info_file
+    $info_path = $path.TrimEnd("\") + "\" + $info_file
 
+    $info | Out-File $info_path
+
+    Set-AzStorageBlobContent -File $outputPath `
+      -Container $containerName `
+      -Blob $outputFile `
+      -Context $context `
+      -Force
+
+    Set-AzStorageBlobContent -File $info_path `
+      -Container $containerName `
+      -Blob $info_file `
+      -Context $context `
+      -Force
 }
 
-$path = "C:\Users\X169392\Source\Repos\KadenMai\AzureRMApp.Identity\AzureRMApp.Identity\wwwroot\data"
+
 
 $ignoreType = "microsoft.alertsmanagement/smartdetectoralertrules", `
             "Microsoft.Portal/dashboards", `
@@ -257,10 +274,23 @@ $ignoreType = "microsoft.alertsmanagement/smartdetectoralertrules", `
             "Microsoft.Web/serverfarms"
             
             
+                     
+# Login by SP
+# $azureAplicationId = "c299de05-d13a-4ede-9809-4245e32dbcae"
+# $azureTenantId= "3ec4eda1-a5d1-433d-90da-8dc791283d95"
+# $azurePassword = ConvertTo-SecureString "35ec0012-3654-bb46-72d0-b89ed3baa72e" -AsPlainText -Force
+# $psCred = New-Object System.Management.Automation.PSCredential($azureAplicationId , $azurePassword)
+# Add-AzAccount -Credential $psCred -TenantId $azureTenantId  -ServicePrincipal 
 
-do{
+# Storage
+$storage = "storageaccounta3tsaac11"
+$key = "nuY+GC/XM2yOYb+g7u0HV+qj3pnTbktGME+E+u4RWL8tjcTopyasrxEzzrez7kwTr7tkpQfx772T3uNdI9gdXw=="
+$containerName = "azurermapp"
+$context = New-AzStorageContext -StorageAccountName $storage -StorageAccountKey $key
+
+$path = "C:\ezpath\data"
+
 
 GetResourceInfo_main -path $path -subscriptionName "Sandbox"
+GetResourceInfo_main -path $path -subscriptionName "Hub"
 #GetResourceInfo_main -path $path -subscriptionName "Development"
-}
-while ($true) # infinity loop
