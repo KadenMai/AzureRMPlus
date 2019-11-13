@@ -10,6 +10,7 @@ namespace AzureRMPlus.Models
         public string SubsName { get; set; }
         public string SubsTime { get; set; }
         public string SubsCount { get; set; }
+        public string SubsId { get; set; }
 
         public SubsSumaryModel(string str)
         {
@@ -17,6 +18,7 @@ namespace AzureRMPlus.Models
             SubsName = infos[0].Trim('\r');
             SubsTime = infos[1].Trim('\r');
             SubsCount = infos[2].Trim('\r');
+            SubsId = infos[3].Trim('\r');
         }
     }
 }

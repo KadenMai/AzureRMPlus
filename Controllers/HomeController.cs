@@ -43,11 +43,18 @@ namespace AzureRMPlus.Controllers
         [Authorize]
         public IActionResult Subscriptions()
         {
-            SubsSumaryModel ss1 = GetSubsSumary("development").Result;
-            SubsSumaryModel ss2 = GetSubsSumary("sandbox").Result;
             List<SubsSumaryModel> lss = new List<SubsSumaryModel>();
-            lss.Add(ss1);
-            lss.Add(ss2);
+            List<string> fileNames = BlobStorageHelper.GetListBlobFile(
+                _storageInfo.StorageName,
+                _storageInfo.StorageKey,
+                _storageInfo.ContainerName,
+                ".info").Result;
+
+            foreach(string name in fileNames)
+            {
+                lss.Add(GetSubsSumary(name).Result);
+            }
+
             ViewData["lsubs"] = lss;
 
             return View();
@@ -68,7 +75,7 @@ namespace AzureRMPlus.Controllers
                 _storageInfo.StorageName,
                 _storageInfo.StorageKey,
                 _storageInfo.ContainerName,
-                fileName);
+                subsname);
             SubsSumaryModel ss = new SubsSumaryModel(content);
 
             return ss;

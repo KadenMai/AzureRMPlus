@@ -29,5 +29,28 @@ namespace AzureRMPlus.Helper
 
             return r.ReadToEnd();
         }
+
+        static public async Task<List<string>> GetListBlobFile(string StorageName, string StorageKey, string ContainerName, string blogExt)
+        {
+            var storageCredentials = new StorageCredentials(StorageName, StorageKey);
+            var cloudStorageAccount = new CloudStorageAccount(storageCredentials, true);
+
+            var blobClient = cloudStorageAccount.CreateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference(ContainerName);
+
+            List<string> fileNames = new List<string>();
+
+            foreach (IListBlobItem item in container.ListBlobs(null, false))
+            {
+                if (item.GetType() == typeof(CloudBlockBlob))
+                {
+                    CloudBlockBlob Bblob = (CloudBlockBlob)item;
+                    if (Bblob.Name.EndsWith(blogExt, StringComparison.CurrentCultureIgnoreCase))
+                        fileNames.Add(Bblob.Name);
+                }
+            }
+
+            return fileNames;
+        }
     }
 }
