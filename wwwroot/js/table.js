@@ -14,12 +14,7 @@ function format(d) {
     d.ResourceId +
     "</a></td>" +
     "</tr>" +
-    "<tr>" +
-    "<td>Resource Group</td>" +
-    "<td>" +
-    d.ResourceGroupName +
-    "</td>" +
-    "</tr>" +
+    
     "<tr>" +
     "<td>Metric</td>" +
     "<td>" +
@@ -70,8 +65,17 @@ $(document).ready(function () {
         defaultContent: ""
       },
       { data: "ResourceName" },
-      { data: "ResourceType" },
-      //   { data: "ResourceGroupName" },
+        {
+            data: "ResourceType",
+            //render: function (data, type, row) {
+            //    if (row == 0)
+            //        return "";
+            //    var split = data.split('/');
+            //    return split[split.length - 1];
+                
+            //},
+        },
+      
         {
             data: "FirstTime",
             //type:  "date-de"
@@ -86,7 +90,8 @@ $(document).ready(function () {
       { data: "LastCallerName" },
       // { data: "ExtraInfo" },
       // { data: "Metric" },
-      { data: "Location" }
+        { data: "Location" },
+        { data: "ResourceGroupName" },
     ],
     order: [[5, "desc"]],
     dom: '<"toolbar">frtip',
@@ -125,6 +130,9 @@ $(document).ready(function () {
     },
     {
       column_number: 7
+    },
+    {
+        column_number: 8
     }
   ]);
 

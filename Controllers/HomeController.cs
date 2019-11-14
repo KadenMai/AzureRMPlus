@@ -52,10 +52,18 @@ namespace AzureRMPlus.Controllers
 
             foreach(string name in fileNames)
             {
-                lss.Add(GetSubsSumary(name).Result);
+                try
+                {
+                    lss.Add(GetSubsSumary(name).Result);
+                }
+                catch
+                { // skip the error
+                }
             }
 
-            ViewData["lsubs"] = lss;
+            List<SubsSumaryModel> sortedlss = lss.OrderByDescending(o => o.SubsCount).ToList();
+
+            ViewData["lsubs"] = sortedlss;
 
             return View();
         }
