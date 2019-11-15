@@ -52,11 +52,14 @@ $(document).ready(function () {
     var Subs = getParameterByName("subs");
     var SubsName = getParameterByName("name");
     'use strict';
+    var h = window.innerHeight;
 
     var table = $("#example").DataTable({
-        AutoWidth: false,
         lengthMenu: [[100, -1], [100, "All"]],
         ajax: "/API/SubsDetails?subs=" + Subs,
+        scrollX: true,
+        scrollY: (h -300) + "px",
+        scrollCollapse: true,
     columns: [
       {
         className: "details-control",
@@ -111,7 +114,7 @@ $(document).ready(function () {
     {
       column_number: 2,
       text_data_delimiter: ",",
-      filter_type: "auto_complete"
+        filter_type: "auto_complete"
     },
     {
       column_number: 3,
