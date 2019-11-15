@@ -68,7 +68,7 @@ function GetAccessLog{
     param ($rs)
 
     $rsLogs = Get-AzLog -StartTime (Get-Date).AddDays(-89) -ResourceId $rs.ResourceId
-    echo "Total Log: "$rsLogs.Count
+    #echo "Total Log: "$rsLogs.Count
        
     $firstCaller = ""
     $lastCaller = ""
@@ -86,7 +86,8 @@ function GetAccessLog{
         foreach($log in $rsLogs)
         {
             echo $log.Caller
-            if($log.Caller.Contains("@hrblock.com")){
+
+            if($log.Caller -ne $null -and $log.Caller.Contains("@hrblock.com")){
                 $caller = $log.Caller.Replace("@hrblock.com","")   # Get the caller
             }
             else
@@ -114,7 +115,11 @@ function GetAccessLog{
             $strLog = (get-date($log.SubmissionTimestamp)).ToString("u") + " | " `
                         + $log.Claims.Content["name"] + " | " `
                         + $log.OperationName.LocalizedValue 
-            $listLog.Add($strLog)
+            
+            if(-not $listLog.Contains($strLog))
+            {
+                $listLog.Add($strLog)
+            }
 
         }
     }
@@ -160,7 +165,7 @@ function GetResourceInfo_main{
     $startTime = (Get-Date)
 
     # Get list of Resource
-    $listResource = Get-AzResource -ExpandProperties
+    $listResource = Get-AzResource 
     echo "Total resources: " $listResource.Count # show the total rsource
     # Create Resource Infor
     $rsInfor = @{}
@@ -191,8 +196,8 @@ function GetResourceInfo_main{
             $formatListLog = @(" ")
         }
 
-        echo $listActiveLog.firstAccess
-        echo $listActiveLog.firstCaller
+        #echo $listActiveLog.firstAccess
+        #echo $listActiveLog.firstCaller
 
         # $propertisejson = $rs.Properties | ConvertTo-Json -Depth 10
    
@@ -214,7 +219,7 @@ function GetResourceInfo_main{
                                        "ResourceId" = $rs.ResourceId;
                                        "ResourceName" = $rs.Name;
                                        "ResourceType" = $rs.ResourceType.Replace("Microsoft.","MS.");
-                                       "ResourceGroupName" = $rs.ResourceGroupName;
+                                       "ResourceGroupName" = $rs.ResourceGroupName.ToUpper();
                                        "Location" = $rs.Location.ToUpper();
                                        "FirstTime" = $listActiveLog.firstAccess;
                                        "FirstCaller" = $listActiveLog.firstCaller;
@@ -228,6 +233,14 @@ function GetResourceInfo_main{
                                        "ListLogs" = $formatListLog
                                        })
     }
+
+    # Raw Data
+    $raw_file = "ResourceInfo_" + $subs.Subscription.Id +  ".raw"
+
+    $raw_path = $path.TrimEnd("\") + "\" + $raw_file
+
+    $listResource | Out-File $raw_path
+
 
     #$rsInfor | Export-Clixml  $path.TrimEnd("\") + "\ResourceInfo_" + $subscriptionName.Replace(" ","").ToLower() +  ".xml"
 
@@ -249,6 +262,7 @@ function GetResourceInfo_main{
 
     $info | Out-File $info_path
 
+
     Set-AzStorageBlobContent -File $outputPath `
       -Container $containerName `
       -Blob $outputFile `
@@ -260,6 +274,13 @@ function GetResourceInfo_main{
       -Blob $info_file `
       -Context $context `
       -Force
+
+    Set-AzStorageBlobContent -File $raw_path `
+      -Container $containerName `
+      -Blob $raw_file `
+      -Context $context `
+      -Force
+    
 }
 
 
@@ -276,11 +297,11 @@ $ignoreType = "microsoft.alertsmanagement/smartdetectoralertrules", `
             
                      
 # Login by SP
-# $azureAplicationId = "c299de05-d13a-4ede-9809-4245e32dbcae"
-# $azureTenantId= "3ec4eda1-a5d1-433d-90da-8dc791283d95"
-# $azurePassword = ConvertTo-SecureString "35ec0012-3654-bb46-72d0-b89ed3baa72e" -AsPlainText -Force
-# $psCred = New-Object System.Management.Automation.PSCredential($azureAplicationId , $azurePassword)
-# Add-AzAccount -Credential $psCred -TenantId $azureTenantId  -ServicePrincipal 
+$azureaplicationid = "1ca4473c-855d-4974-8762-61ab641c78e2"
+$azuretenantid= "3ec4eda1-a5d1-433d-90da-8dc791283d95"
+$azurepassword = convertto-securestring "eb5fe531-7242-96f1-62ef-c1345a7856e9" -asplaintext -force
+$pscred = new-object system.management.automation.pscredential($azureaplicationid , $azurepassword)
+add-azaccount -credential $pscred -tenantid $azuretenantid  -serviceprincipal 
 
 # Storage
 $storage = "storageaccounta3tsaac11"
@@ -288,9 +309,27 @@ $key = "nuY+GC/XM2yOYb+g7u0HV+qj3pnTbktGME+E+u4RWL8tjcTopyasrxEzzrez7kwTr7tkpQfx
 $containerName = "azurermapp"
 $context = New-AzStorageContext -StorageAccountName $storage -StorageAccountKey $key
 
-$path = "C:\ezpath\data"
 
 
-GetResourceInfo_main -path $path -subscriptionName "Sandbox"
-GetResourceInfo_main -path $path -subscriptionName "Hub"
-GetResourceInfo_main -path $path -subscriptionName "Development"
+$listSubs = @(
+"Development"` # 8830
+#"Production Consumer"` # 8383
+#"Load and Performance"` # 6058
+
+#"Sandbox",` # 1853
+#"Hub",` # 1060
+#"EA Team Subscription",` # 1056
+
+#"Production Retail",` # 740
+#"Cloud Team",` # 156
+#"DR",` # 0
+#"Testing"` # 0  
+)
+
+$path = "C:\ezpath"
+
+foreach ($subs in $listSubs)
+{
+    GetResourceInfo_main -path $path -subscriptionName $subs
+}
+
