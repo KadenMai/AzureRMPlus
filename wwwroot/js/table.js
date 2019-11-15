@@ -6,34 +6,33 @@ function format(d) {
   // `d` is the original data object for the row
   return (
     '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">' +
-    "<tr>" +
-    "<td>ResourceId:</td>" +
-    "<td><a target=_blank href = 'https://portal.azure.com/#@hrblock.onmicrosoft.com/resource" +
-    d.ResourceId +
-    "'>" +
-    d.ResourceId +
-    "</a></td>" +
-    "</tr>" +
-    
-    "<tr>" +
-    "<td>Metric</td>" +
-    "<td>" +
-    d.Metric +
-    "</td>" +
-    "</tr>" +
-    "<tr>" +
-    "<td>ExtraInfo</td>" +
-    "<td>" +
-    d.ExtraInfo +
-    "</td>" +
-    "</tr>" +
+        "<tr>" +
+            "<td>ResourceId:</td>" +
+            "<td><a target=_blank href = 'https://portal.azure.com/#@hrblock.onmicrosoft.com/resource" +
+                    d.ResourceId + "'>" + d.ResourceId +
+                "</a>" + 
+            "</td>" +
+        "</tr>" +
 
-    "<tr>" +
-    "<td>List Logs</td>" +
-    "<td>" +    
-    d.ListLogs.join("<br />") +
-    "</td>" +
-    "</tr>"
+        "<tr>" +
+            "<td>Resource Group</td>" +
+            "<td>" + d.ResourceGroupName + "</td>" +
+        "</tr>" +
+    
+        "<tr>" +
+            "<td>Metric</td>" +
+            "<td>" + d.Metric + "</td>" +
+        "</tr>" +
+
+        "<tr>" +
+            "<td>ExtraInfo</td>" +
+            "<td>" + d.ExtraInfo + "</td>" +
+        "</tr>" +
+
+        "<tr>" +
+            "<td>List Logs</td>" +
+            "<td>" + d.ListLogs.join("<br />") + "</td>" +
+        "</tr>"
   );
   ("</table>");
 }
